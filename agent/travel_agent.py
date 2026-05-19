@@ -11,10 +11,17 @@ except RuntimeError:
 import os
 import sys
 import json
+import streamlit as st
 
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
+
+# LOAD ENV
+load_dotenv()
+
+# GET API KEY
+GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
 # ROOT DIRECTORY
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -31,13 +38,7 @@ from tools.budget_tool import calculate_total_cost
 from tools.display_tool import display_trip
 from tools.itternative_tool import generate_itinerary
 
-# LOAD ENV
-load_dotenv()
-
 # GEMINI MODEL
-
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     temperature=0.7,
@@ -86,19 +87,16 @@ Example:
         HumanMessage(content=user_input)
     ]
 
-    # LLM RESPONSE
     response = llm.invoke(messages)
 
     try:
 
         content = response.content
 
-        # JSON EXTRACTION
         start_idx = content.find("{")
         end_idx = content.rfind("}") + 1
 
         if start_idx == -1 or end_idx == 0:
-            print("Could not parse query.")
             return None
 
         json_str = content[start_idx:end_idx]
@@ -109,20 +107,16 @@ Example:
         print(f"JSON Parsing Error: {e}")
         return None
 
-    # EXTRACT VALUES
     from_city = travel_info.get("from_city")
     to_city = travel_info.get("to_city")
     preference = travel_info.get("preference", "cheap")
     days = travel_info.get("days", 3)
     start_date = travel_info.get("start_date")
 
-    # ---------------- FLIGHT ----------------
+    # FLIGHT
     flight = None
 
-    if (
-        from_city
-        and to_city
-    ):
+    if from_city and to_city:
 
         flight = get_flight(
             from_city,
@@ -130,7 +124,7 @@ Example:
             preference
         )
 
-    # ---------------- HOTEL ----------------
+    # HOTEL
     hotel = None
 
     if to_city:
@@ -140,7 +134,7 @@ Example:
             preference
         )
 
-    # ---------------- PLACES ----------------
+    # PLACES
     places = None
 
     if to_city:
@@ -152,14 +146,14 @@ Example:
             "top_places": top_places
         }
 
-    # ---------------- WEATHER ----------------
+    # WEATHER
     weather = None
 
     if to_city:
 
         weather = get_wheather(to_city)
 
-    # ---------------- ITINERARY ----------------
+    # ITINERARY
     itinerary = []
 
     if places:
@@ -169,14 +163,14 @@ Example:
             days
         )
 
-    # ---------------- BUDGET ----------------
+    # BUDGET
     total_budget = calculate_total_cost(
         flight,
         hotel,
         days
     )
 
-    # ---------------- FINAL TRIP OBJECT ----------------
+    # FINAL OBJECT
     trip = {
         "destination": to_city,
         "days": days,
@@ -190,19 +184,3 @@ Example:
     }
 
     return trip
-
-
-# MAIN
-if __name__ == "__main__":
-
-    user_input = input("Ask your travel query: ")
-
-    trip = process_travel_query(user_input)
-
-    if trip:
-
-        display_trip(trip)
-
-    else:
-
-        print("Trip generation failed.")
