@@ -35,9 +35,13 @@ from tools.itternative_tool import generate_itinerary
 load_dotenv()
 
 # GEMINI MODEL
+
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
-    temperature=0.7
+    temperature=0.7,
+    google_api_key=GOOGLE_API_KEY
 )
 
 
