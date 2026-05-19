@@ -4,5 +4,6 @@ langchain-google-genai
 python-dotenv
 requests
 google-generativeai
-grpcio==1.60.1
-protobuf==4.25.3
+grpcio
+setuptools
+wheel
