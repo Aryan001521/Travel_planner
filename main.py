@@ -12,17 +12,35 @@ st.set_page_config(
 st.markdown("""
 <style>
 
+body {
+    background-color: #0f172a;
+}
+
 .main {
     background-color: #0f172a;
     color: white;
 }
 
+.block-container {
+    padding-top: 2rem;
+}
+
+h1, h2, h3, h4, h5, h6, p, label {
+    color: white !important;
+}
+
 .stTextInput > div > div > input {
     background-color: #1e293b;
     color: white;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid #334155;
     padding: 12px;
+}
+
+.stSelectbox > div > div {
+    background-color: #1e293b;
+    color: white;
+    border-radius: 12px;
 }
 
 .stButton > button {
@@ -38,28 +56,54 @@ st.markdown("""
 
 .stButton > button:hover {
     background: linear-gradient(to right, #1d4ed8, #6d28d9);
+    color: white;
 }
 
 .card {
     background-color: #1e293b;
-    padding: 20px;
-    border-radius: 15px;
+    padding: 25px;
+    border-radius: 18px;
     margin-bottom: 20px;
-    box-shadow: 0px 0px 10px rgba(255,255,255,0.05);
+    box-shadow: 0px 0px 15px rgba(255,255,255,0.05);
 }
 
 .title {
     text-align: center;
-    font-size: 55px;
+    font-size: 60px;
     font-weight: bold;
     color: white;
+    margin-bottom: 10px;
 }
 
 .subtitle {
     text-align: center;
-    font-size: 20px;
+    font-size: 22px;
     color: #cbd5e1;
     margin-bottom: 40px;
+}
+
+.place-box {
+    background-color: #0f172a;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #334155;
+}
+
+.itinerary-box {
+    background-color: #0f172a;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border-left: 5px solid #7c3aed;
+}
+
+.budget-box {
+    text-align: center;
+    padding: 25px;
+    background: linear-gradient(to right, #2563eb, #7c3aed);
+    border-radius: 20px;
+    color: white;
 }
 
 </style>
@@ -76,7 +120,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# LAYOUT
+# INPUT SECTION
 col1, col2 = st.columns(2)
 
 with col1:
@@ -124,171 +168,151 @@ if st.button("Generate Travel Plan"):
 
                 trip = process_travel_query(query)
 
+                if not trip:
+
+                    st.error("Trip generation failed.")
+                    st.stop()
+
                 st.success("Trip Generated Successfully!")
 
-                # FLIGHT
+                # ---------------- FLIGHT ----------------
+
                 flight = trip.get("flight")
 
                 if flight and isinstance(flight, dict):
 
-                    st.markdown(
-                        "<div class='card'>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
-                    st.subheader("✈️ Flight Selected")
+                    st.subheader("✈️ Flight Details")
 
-                    st.write(
-                        f"**Airline:** {flight['airline']}"
-                    )
+                    st.write(f"**Airline:** {flight.get('airline', 'N/A')}")
+                    st.write(f"**From:** {flight.get('from', 'N/A')}")
+                    st.write(f"**To:** {flight.get('to', 'N/A')}")
+                    st.write(f"**Price:** ₹{flight.get('price', 'N/A')}")
 
-                    st.write(
-                        f"**From:** {flight['from']}"
-                    )
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-                    st.write(
-                        f"**To:** {flight['to']}"
-                    )
+                # ---------------- HOTEL ----------------
 
-                    st.write(
-                        f"**Price:** ₹{flight['price']}"
-                    )
-
-                    st.markdown(
-                        "</div>",
-                        unsafe_allow_html=True
-                    )
-
-                # HOTEL
                 hotel = trip.get("hotel")
 
                 if hotel and isinstance(hotel, dict):
 
-                    st.markdown(
-                        "<div class='card'>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
                     st.subheader("🏨 Hotel Recommendation")
 
+                    st.write(f"**Name:** {hotel.get('name', 'N/A')}")
+                    st.write(f"**Stars:** ⭐ {hotel.get('stars', 'N/A')}")
                     st.write(
-                        f"**Name:** {hotel['name']}"
+                        f"**Price/Night:** ₹{hotel.get('price_per_night', 'N/A')}"
                     )
 
-                    st.write(
-                        f"**Stars:** ⭐ {hotel['stars']}"
-                    )
+                    amenities = hotel.get("amenities", [])
 
-                    st.write(
-                        f"**Price/Night:** ₹{hotel['price_per_night']}"
-                    )
+                    if amenities:
+                        st.write(
+                            f"**Amenities:** {', '.join(amenities)}"
+                        )
 
-                    st.write(
-                        f"**Amenities:** "
-                        f"{', '.join(hotel['amenities'])}"
-                    )
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-                    st.markdown(
-                        "</div>",
-                        unsafe_allow_html=True
-                    )
+                # ---------------- PLACES ----------------
 
-                # PLACES
                 places = trip.get("places")
 
-                if places:
+                if (
+                    places
+                    and isinstance(places, dict)
+                    and places.get("top_places")
+                ):
 
-                    st.markdown(
-                        "<div class='card'>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
                     st.subheader("🏝️ Top Places")
 
                     for place in places["top_places"]:
 
-                        st.write(
-                            f"📍 {place['name']} "
-                            f"(⭐ {place['rating']})"
+                        st.markdown(
+                            f"""
+                            <div class='place-box'>
+                            📍 <b>{place.get('name', 'Unknown')}</b>
+                            <br>
+                            ⭐ Rating: {place.get('rating', 'N/A')}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
                         )
 
-                    st.markdown(
-                        "</div>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-                # WEATHER
+                # ---------------- WEATHER ----------------
+
                 weather = trip.get("weather")
 
                 if weather and isinstance(weather, dict):
 
-                    st.markdown(
-                        "<div class='card'>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
                     st.subheader("🌤️ Weather Forecast")
 
-                    st.write(
-                        f"**Temperature:** "
-                        f"{weather['temperature']}°C"
-                    )
+                    temp = weather.get("temperature", "N/A")
+                    wind = weather.get("windspeed", "N/A")
 
-                    st.write(
-                        f"**Wind Speed:** "
-                        f"{weather['windspeed']} km/h"
-                    )
+                    st.write(f"**Temperature:** {temp}°C")
+                    st.write(f"**Wind Speed:** {wind} km/h")
 
-                    st.markdown(
-                        "</div>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-                # ITINERARY
+                # ---------------- ITINERARY ----------------
+
                 itinerary = trip.get("itinerary")
 
-                if itinerary:
+                if itinerary and isinstance(itinerary, list):
 
-                    st.markdown(
-                        "<div class='card'>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
                     st.subheader("🗓️ Day-wise Itinerary")
 
                     for day in itinerary:
 
-                        st.write(f"### {day['day']}")
+                        st.markdown(
+                            f"""
+                            <div class='itinerary-box'>
 
-                        st.write(
-                            f"📍 {day['place']}"
+                            <h4>{day.get('day', 'Day')}</h4>
+
+                            📍 <b>
+                            {day.get('place', 'No Place')}
+                            </b>
+
+                            <br><br>
+
+                            📝 {day.get('plan', 'No Plan Available')}
+
+                            </div>
+                            """,
+                            unsafe_allow_html=True
                         )
 
-                        st.write(
-                            f"📝 {day['plan']}"
-                        )
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-                    st.markdown(
-                        "</div>",
-                        unsafe_allow_html=True
-                    )
+                # ---------------- BUDGET ----------------
 
-                # BUDGET
-                st.markdown(
-                    "<div class='card'>",
-                    unsafe_allow_html=True
-                )
+                st.markdown("<div class='card'>", unsafe_allow_html=True)
 
                 st.subheader("💰 Estimated Budget")
 
-                st.write(
-                    f"## ₹{trip['total_cost']}"
-                )
-
                 st.markdown(
-                    "</div>",
+                    f"""
+                    <div class='budget-box'>
+                        <h1>₹{trip.get('total_cost', 0)}</h1>
+                    </div>
+                    """,
                     unsafe_allow_html=True
                 )
+
+                st.markdown("</div>", unsafe_allow_html=True)
 
             except Exception as e:
 
@@ -296,6 +320,4 @@ if st.button("Generate Travel Plan"):
 
     else:
 
-        st.warning(
-            "Please enter both cities."
-        )
+        st.warning("Please enter both cities.")
